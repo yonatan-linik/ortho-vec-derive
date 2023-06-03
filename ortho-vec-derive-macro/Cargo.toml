@@ -1,0 +1,21 @@
+[package]
+name = "ortho-vec-derive-macro"
+description = "Macro definitions for `ortho-vec-derive`"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yonatan Linik <yonatanlinik@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/yonatan-linik/ortho-vec-derive"
+license = "MIT"
+keywords = ["derive", "macro", "struct", "vec", "performance"]
+categories = []
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = {version="2.0.14", features = ["extra-traits"]}
+quote = "1.0"
+proc-macro2 = "1.0.56"
+
+ortho-vec-derive-impl = { version = "0.1.0", path = "../ortho-vec-derive-impl" }

@@ -1,0 +1,6 @@
+[workspace]
+members = [
+	"ortho-vec-derive-macro",
+	"ortho-vec-derive-impl",
+	"ortho-vec-derive"
+]

@@ -1,0 +1,16 @@
+[package]
+name = "ortho-vec-derive-impl"
+description = "Derive orthogonal vector structure for better performance"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yonatan Linik <yonatanlinik@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/yonatan-linik/ortho-vec-derive"
+license = "MIT"
+keywords = ["derive", "macro", "struct", "vec", "performance"]
+categories = []
+
+[features]
+default = []
+
+[dependencies]
