@@ -196,7 +196,7 @@ fn build_ortho_vec_struct(
     let vec_into_ortho_impl = quote!(
         pub trait #into_ortho_name {
             type OrthoVec;
-        
+
             fn into_ortho(self) -> Self::OrthoVec;
         }
 
@@ -293,6 +293,93 @@ fn build_ortho_vec_iter_struct(
     )
 }
 
+fn build_ortho_vec_into_iter_struct(
+    name: &Ident,
+    ortho_struct_name: &Ident,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> (Ident, proc_macro2::TokenStream) {
+    let ortho_vec_into_iter_name = Ident::new(
+        &("OrthoVecIntoIter".to_string() + &name.to_string()),
+        Span::call_site(),
+    );
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    let into_iter_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_ty = named_field.ty.clone();
+
+        quote! {
+          #field_ident: <Vec<#field_ty #generics_no_trait_bounds> as IntoIterator>::IntoIter,
+        }
+    });
+
+    let iter_props_assign_into_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+          #field_ident: self.#field_ident.next().expect("Next field must exist"),
+        }
+    });
+
+   let into_iter_for_each_vec = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+          #field_ident: self.#field_ident.into_iter(),
+        }
+    });
+
+    (
+        ortho_vec_into_iter_name.clone(),
+        quote!(
+            struct #ortho_vec_into_iter_name #generics
+            #where_clause
+            {
+                #into_iter_props
+                index: usize,
+                len: usize,
+            }
+
+            impl #generics Iterator for #ortho_vec_into_iter_name #generics_no_trait_bounds
+            #where_clause
+            {
+                type Item = #name #generics_no_trait_bounds;
+
+                #[inline]
+                fn next(&mut self) -> Option<Self::Item> {
+                    if self.index >= self.len {
+                        None
+                    } else {
+                        self.index += 1;
+                        Some(#name {
+                            #iter_props_assign_into_iter
+                        })
+                    }
+                }
+            }
+
+            impl #generics IntoIterator for #ortho_vec_name #generics_no_trait_bounds
+            #where_clause
+            {
+                type Item = #name #generics_no_trait_bounds;
+                type IntoIter = #ortho_vec_into_iter_name #generics_no_trait_bounds;
+
+                fn into_iter(self) -> #ortho_vec_into_iter_name #generics_no_trait_bounds {
+                    #ortho_vec_into_iter_name {
+                        index: 0,
+                        len: self.len(),
+                        #into_iter_for_each_vec
+                    }
+                }
+            }
+        ),
+    )
+}
+
 #[proc_macro_derive(OrthoVec)]
 pub fn ortho_vec(input: TokenStream) -> TokenStream {
     let DeriveInput {
@@ -330,12 +417,22 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
             &ortho_lifetime,
         );
 
+        let (_, ortho_vec_into_iter_ts) = build_ortho_vec_into_iter_struct(
+            name,
+            &ortho_struct_name,
+            &ortho_vec_name,
+            &data_struct,
+            &generics,
+            &where_clause);
+
         quote! {
             #ortho_struct_ts
 
             #ortho_vec_ts
 
             #ortho_vec_iter_ts
+
+            #ortho_vec_into_iter_ts
         }
     } else {
         quote!()
