@@ -313,7 +313,7 @@ fn build_ortho_vec_into_iter_struct(
         let field_ty = named_field.ty.clone();
 
         quote! {
-          #field_ident: <Vec<#field_ty #generics_no_trait_bounds> as IntoIterator>::IntoIter,
+          #field_ident: <Vec<#field_ty> as IntoIterator>::IntoIter,
         }
     });
 
@@ -339,9 +339,9 @@ fn build_ortho_vec_into_iter_struct(
             struct #ortho_vec_into_iter_name #generics
             #where_clause
             {
-                #into_iter_props
                 index: usize,
                 len: usize,
+                #into_iter_props
             }
 
             impl #generics Iterator for #ortho_vec_into_iter_name #generics_no_trait_bounds
@@ -440,5 +440,3 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
 
     gen.into()
 }
-
-// struct OrthoVec<T> {}
