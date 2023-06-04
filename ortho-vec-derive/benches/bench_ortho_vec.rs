@@ -1,5 +1,7 @@
+#![allow(dead_code)]
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use ortho_vec_derive::OrthoVec;
+use ortho_vec_derive::prelude::*;
 use rand::Rng;
 
 struct Point10D {
@@ -22,8 +24,7 @@ pub fn regular_vec_benchmark(c: &mut Criterion) {
         let mut rng = rand::thread_rng();
 
         let v: Vec<_> = (0..size as usize)
-            .map(|x| {
-                let x = x as f64;
+            .map(|_| {
                 Point10D {
                     a: rng.gen(),
                     b: rng.gen(),
@@ -42,7 +43,7 @@ pub fn regular_vec_benchmark(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("vec", size), &v, |b, i| {
             b.iter(|| {
                 let sum = i.iter().map(|x| x.a + x.b).sum::<f64>();
-                let sum2 = black_box(sum + 7.0);
+                let _sum2 = black_box(sum + 7.0);
             })
         });
     }
@@ -68,9 +69,8 @@ pub fn ortho_vec_benchmark(c: &mut Criterion) {
     for size in [1e+5, 1e+6, 1e+7, 1e+8] {
         let mut rng = rand::thread_rng();
 
-        let v: OrthoVecOPoint10D = (0..size as usize)
-            .map(|x| {
-                let x = x as f64;
+        let v = (0..size as usize)
+            .map(|_| {
                 OPoint10D {
                     a: rng.gen(),
                     b: rng.gen(),
@@ -90,7 +90,7 @@ pub fn ortho_vec_benchmark(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("ortho vec", size), &v, |b, i| {
             b.iter(|| {
                 let sum = i.iter().map(|x| x.a + x.b).sum::<f64>();
-                let sum2 = black_box(sum + 7.0);
+                let _sum2 = black_box(sum + 7.0);
             })
         });
     }
