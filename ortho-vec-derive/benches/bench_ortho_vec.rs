@@ -85,7 +85,7 @@ pub fn ortho_vec_benchmark(c: &mut Criterion) {
                 }
             })
             .collect::<Vec<_>>()
-            .into();
+            .into_ortho();
 
         group.bench_with_input(BenchmarkId::new("ortho vec", size), &v, |b, i| {
             b.iter(|| {

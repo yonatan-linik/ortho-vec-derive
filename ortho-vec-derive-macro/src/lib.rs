@@ -188,6 +188,29 @@ fn build_ortho_vec_struct(
         }
     );
 
+    let into_ortho_name = Ident::new(
+        &("IntoOrtho".to_string() + &name.to_string()),
+        Span::call_site(),
+    );
+
+    let vec_into_ortho_impl = quote!(
+        pub trait #into_ortho_name {
+            type OrthoVec;
+        
+            fn into_ortho(self) -> Self::OrthoVec;
+        }
+
+        impl #generics #into_ortho_name for Vec<#name #generics_no_trait_bounds>
+        #where_clause
+        {
+            type OrthoVec = #ortho_vec_name #generics_no_trait_bounds;
+
+            fn into_ortho(self) -> Self::OrthoVec {
+                self.into()
+            }
+        }
+    );
+
     (
         ortho_vec_name,
         quote!(
@@ -196,6 +219,8 @@ fn build_ortho_vec_struct(
             #ortho_vec_len_impl
 
             #ortho_vec_from_vec_impl
+
+            #vec_into_ortho_impl
         ),
     )
 }
