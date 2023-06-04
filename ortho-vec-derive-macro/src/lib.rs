@@ -154,11 +154,11 @@ fn build_ortho_vec_struct(
         }
     );
 
-    let empty_vecs_props_ts_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
+    let empty_vecs_with_value_capacity_ts_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-            #field_ident: vec![],
+            #field_ident: Vec::with_capacity(value.len()),
         }
     });
 
@@ -176,7 +176,7 @@ fn build_ortho_vec_struct(
         {
             fn from(value: Vec<#name #generics_no_trait_bounds>) -> Self {
                 let mut v = Self {
-                    #empty_vecs_props_ts_iter
+                    #empty_vecs_with_value_capacity_ts_iter
                 };
 
                 for p in value {
@@ -282,7 +282,7 @@ fn build_ortho_vec_iter_struct(
             impl #ortho_generics #ortho_vec_name #generics_no_trait_bounds
             #where_clause
             {
-                fn iter(&'ortho self) -> #ortho_vec_iter_name #ortho_generics_no_trait_bounds {
+                fn iter(&#ortho_lifetime self) -> #ortho_vec_iter_name #ortho_generics_no_trait_bounds {
                     #ortho_vec_iter_name {
                         v: &self,
                         index: 0
