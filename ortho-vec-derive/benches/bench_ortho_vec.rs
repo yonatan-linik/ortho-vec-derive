@@ -20,23 +20,21 @@ struct Point10D {
 pub fn regular_vec_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("summation");
 
-    for size in [1e+5, 1e+6, 1e+7, 1e+8] {
+    for size in [1e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7, 1e+8] {
         let mut rng = rand::thread_rng();
 
         let v: Vec<_> = (0..size as usize)
-            .map(|_| {
-                Point10D {
-                    a: rng.gen(),
-                    b: rng.gen(),
-                    c: rng.gen(),
-                    d: rng.gen(),
-                    e: rng.gen(),
-                    f: rng.gen(),
-                    g: rng.gen(),
-                    h: rng.gen(),
-                    i: rng.gen(),
-                    j: rng.gen(),
-                }
+            .map(|_| Point10D {
+                a: rng.gen(),
+                b: rng.gen(),
+                c: rng.gen(),
+                d: rng.gen(),
+                e: rng.gen(),
+                f: rng.gen(),
+                g: rng.gen(),
+                h: rng.gen(),
+                i: rng.gen(),
+                j: rng.gen(),
             })
             .collect();
 
@@ -66,23 +64,21 @@ struct OPoint10D {
 pub fn ortho_vec_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("summation");
 
-    for size in [1e+5, 1e+6, 1e+7, 1e+8] {
+    for size in [1e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7, 1e+8] {
         let mut rng = rand::thread_rng();
 
         let v = (0..size as usize)
-            .map(|_| {
-                OPoint10D {
-                    a: rng.gen(),
-                    b: rng.gen(),
-                    c: rng.gen(),
-                    d: rng.gen(),
-                    e: rng.gen(),
-                    f: rng.gen(),
-                    g: rng.gen(),
-                    h: rng.gen(),
-                    i: rng.gen(),
-                    j: rng.gen(),
-                }
+            .map(|_| OPoint10D {
+                a: rng.gen(),
+                b: rng.gen(),
+                c: rng.gen(),
+                d: rng.gen(),
+                e: rng.gen(),
+                f: rng.gen(),
+                g: rng.gen(),
+                h: rng.gen(),
+                i: rng.gen(),
+                j: rng.gen(),
             })
             .collect::<Vec<_>>()
             .into_ortho();

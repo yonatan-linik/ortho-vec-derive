@@ -154,13 +154,14 @@ fn build_ortho_vec_struct(
         }
     );
 
-    let empty_vecs_with_value_capacity_ts_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
-        let field_ident = named_field.ident.as_ref().unwrap();
+    let empty_vecs_with_value_capacity_ts_iter =
+        transform_named_fields_into_ts(data_struct, &|named_field| {
+            let field_ident = named_field.ident.as_ref().unwrap();
 
-        quote! {
-            #field_ident: Vec::with_capacity(value.len()),
-        }
-    });
+            quote! {
+                #field_ident: Vec::with_capacity(value.len()),
+            }
+        });
 
     let push_p_into_v_props_ts_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
         let field_ident = named_field.ident.as_ref().unwrap();
@@ -247,7 +248,7 @@ fn build_ortho_vec_iter_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-          #field_ident: &self.v.#field_ident[self.index - 1],
+            #field_ident: unsafe { self.v.#field_ident.get_unchecked(self.index - 1) },
         }
     });
 
@@ -325,7 +326,7 @@ fn build_ortho_vec_into_iter_struct(
         }
     });
 
-   let into_iter_for_each_vec = transform_named_fields_into_ts(data_struct, &|named_field| {
+    let into_iter_for_each_vec = transform_named_fields_into_ts(data_struct, &|named_field| {
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
@@ -423,7 +424,8 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
             &ortho_vec_name,
             &data_struct,
             &generics,
-            &where_clause);
+            &where_clause,
+        );
 
         quote! {
             #ortho_struct_ts
