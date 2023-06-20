@@ -346,13 +346,33 @@ fn build_ortho_vec_iter_mut_struct(
     let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
     let ortho_generics_no_trait_bounds = remove_trait_bounds_from_generics(&ortho_generics);
 
-    let vec_iter_props_assign_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
+    let vec_iter_mut_define_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_type = &named_field.ty;
+
+        quote! {
+            #field_ident: std::slice::IterMut<#ortho_lifetime, #field_type>,
+        }
+    });
+
+    let vec_iter_mut_assign_props_from_self =
+        transform_named_fields_into_ts(data_struct, &|named_field| {
+            let field_ident = named_field.ident.as_ref().unwrap();
+
+            quote! {
+                #field_ident: self.#field_ident.iter_mut(),
+            }
+        });
+
+    let mut_entry_props_assign_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-            #field_ident: unsafe { &mut *(self.v.#field_ident.get_unchecked_mut(self.index - 1) as *mut _) },
+            #field_ident: unsafe { self.#field_ident.next().unwrap_unchecked() },
         }
     });
+
+    let first_ident_name = take_first_named_field_ts(data_struct);
 
     (
         ortho_vec_iter_mut_name.clone(),
@@ -360,7 +380,7 @@ fn build_ortho_vec_iter_mut_struct(
             struct #ortho_vec_iter_mut_name #ortho_generics
             #where_clause
             {
-                v: &#ortho_lifetime mut #ortho_vec_name #generics_no_trait_bounds,
+                #vec_iter_mut_define_props
                 index: usize,
             }
 
@@ -371,12 +391,12 @@ fn build_ortho_vec_iter_mut_struct(
 
                 #[inline]
                 fn next(&mut self) -> Option<Self::Item> {
-                    if self.index >= self.v.len() {
+                    if self.index >= self.#first_ident_name.len() {
                         None
                     } else {
                         self.index += 1;
                         Some(#ortho_struct_mut_name {
-                            #vec_iter_props_assign_iter
+                            #mut_entry_props_assign_iter
                         })
                     }
                 }
@@ -387,7 +407,7 @@ fn build_ortho_vec_iter_mut_struct(
             {
                 fn iter_mut(&#ortho_lifetime mut self) -> #ortho_vec_iter_mut_name #ortho_generics_no_trait_bounds {
                     #ortho_vec_iter_mut_name {
-                        v: self,
+                        #vec_iter_mut_assign_props_from_self
                         index: 0
                     }
                 }
