@@ -351,7 +351,7 @@ fn build_ortho_vec_iter_mut_struct(
         let field_type = &named_field.ty;
 
         quote! {
-            #field_ident: std::slice::IterMut<#ortho_lifetime, #field_type>,
+            #field_ident: &#ortho_lifetime mut [#field_type],
         }
     });
 
@@ -360,7 +360,7 @@ fn build_ortho_vec_iter_mut_struct(
             let field_ident = named_field.ident.as_ref().unwrap();
 
             quote! {
-                #field_ident: self.#field_ident.iter_mut(),
+                #field_ident: self.#field_ident.as_mut_slice(),
             }
         });
 
@@ -368,7 +368,31 @@ fn build_ortho_vec_iter_mut_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-            #field_ident: unsafe { self.#field_ident.next().unwrap_unchecked() },
+            #field_ident: unsafe { &mut *(#field_ident as *mut _) },
+        }
+    });
+
+    let split_at_first_assignment = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let rest_of_ident = Ident::new(
+            &("rest_of_".to_string() + &field_ident.to_string()),
+            Span::call_site(),
+        );
+
+        quote! {
+            let (#field_ident, #rest_of_ident) = unsafe { self.#field_ident.split_first_mut().unwrap_unchecked() };
+        }
+    });
+
+    let assign_rest_of_to_self = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let rest_of_ident = Ident::new(
+            &("rest_of_".to_string() + &field_ident.to_string()),
+            Span::call_site(),
+        );
+
+        quote! {
+            self.#field_ident = unsafe { &mut *(#rest_of_ident as *mut _) };
         }
     });
 
@@ -395,6 +419,9 @@ fn build_ortho_vec_iter_mut_struct(
                         None
                     } else {
                         self.index += 1;
+                        #split_at_first_assignment
+
+                        #assign_rest_of_to_self
                         Some(#ortho_struct_mut_name {
                             #mut_entry_props_assign_iter
                         })
