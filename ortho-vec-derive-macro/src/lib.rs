@@ -445,7 +445,6 @@ fn build_ortho_vec_iter_mut_struct(
 
 fn build_ortho_vec_into_iter_struct(
     name: &Ident,
-    ortho_struct_name: &Ident,
     ortho_vec_name: &Ident,
     data_struct: &DataStruct,
     generics: &Generics,
@@ -587,7 +586,6 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
 
         let (_, ortho_vec_into_iter_ts) = build_ortho_vec_into_iter_struct(
             name,
-            &ortho_struct_name,
             &ortho_vec_name,
             &data_struct,
             &generics,
