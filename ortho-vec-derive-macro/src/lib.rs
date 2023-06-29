@@ -96,7 +96,7 @@ fn build_ortho_struct(
         let field_ty = &named_field.ty;
 
         quote! {
-          #field_ident: &#ortho_lifetime #field_ty,
+          pub(super) #field_ident: &#ortho_lifetime #field_ty,
         }
     });
 
@@ -105,7 +105,7 @@ fn build_ortho_struct(
     (
         ortho_struct_name.clone(),
         quote!(
-        struct #ortho_struct_name #ortho_generics
+        pub(super) struct #ortho_struct_name #ortho_generics
         #where_clause
         {
             #props_ts_iter
@@ -130,7 +130,7 @@ fn build_ortho_struct_mut(
         let field_ty = &named_field.ty;
 
         quote! {
-          #field_ident: &#ortho_lifetime mut #field_ty,
+          pub(super) #field_ident: &#ortho_lifetime mut #field_ty,
         }
     });
 
@@ -139,7 +139,7 @@ fn build_ortho_struct_mut(
     (
         ortho_struct_mut_name.clone(),
         quote!(
-        struct #ortho_struct_mut_name #ortho_generics
+        pub(super) struct #ortho_struct_mut_name #ortho_generics
         #where_clause
         {
             #props_ts_iter
@@ -168,7 +168,7 @@ fn build_ortho_vec_struct(
     });
 
     let ortho_vec_struct_decl = quote!(
-        struct #ortho_vec_name #generics
+        pub(super) struct #ortho_vec_name #generics
         #where_clause
         {
             #vec_props_ts_iter
@@ -182,7 +182,7 @@ fn build_ortho_vec_struct(
         impl #generics #ortho_vec_name #generics_no_trait_bounds
         #where_clause
         {
-            fn len(&self) -> usize {
+            pub(super) fn len(&self) -> usize {
                 self.#first_ident_name.len()
             }
         }
@@ -289,7 +289,7 @@ fn build_ortho_vec_iter_struct(
     (
         ortho_vec_iter_name.clone(),
         quote!(
-            struct #ortho_vec_iter_name #ortho_generics
+            pub(super) struct #ortho_vec_iter_name #ortho_generics
             #where_clause
             {
                 v: & #ortho_lifetime #ortho_vec_name #generics_no_trait_bounds,
@@ -317,7 +317,7 @@ fn build_ortho_vec_iter_struct(
             impl #ortho_generics #ortho_vec_name #generics_no_trait_bounds
             #where_clause
             {
-                fn iter(&#ortho_lifetime self) -> #ortho_vec_iter_name #ortho_generics_no_trait_bounds {
+                pub(super) fn iter(&#ortho_lifetime self) -> #ortho_vec_iter_name #ortho_generics_no_trait_bounds {
                     #ortho_vec_iter_name {
                         v: &self,
                         index: 0
@@ -401,7 +401,7 @@ fn build_ortho_vec_iter_mut_struct(
     (
         ortho_vec_iter_mut_name.clone(),
         quote!(
-            struct #ortho_vec_iter_mut_name #ortho_generics
+            pub(super) struct #ortho_vec_iter_mut_name #ortho_generics
             #where_clause
             {
                 #vec_iter_mut_define_props
@@ -432,7 +432,7 @@ fn build_ortho_vec_iter_mut_struct(
             impl #ortho_generics #ortho_vec_name #generics_no_trait_bounds
             #where_clause
             {
-                fn iter_mut(&#ortho_lifetime mut self) -> #ortho_vec_iter_mut_name #ortho_generics_no_trait_bounds {
+                pub(super) fn iter_mut(&#ortho_lifetime mut self) -> #ortho_vec_iter_mut_name #ortho_generics_no_trait_bounds {
                     #ortho_vec_iter_mut_name {
                         #vec_iter_mut_assign_props_from_self
                         index: 0
@@ -485,7 +485,7 @@ fn build_ortho_vec_into_iter_struct(
     (
         ortho_vec_into_iter_name.clone(),
         quote!(
-            struct #ortho_vec_into_iter_name #generics
+            pub(super) struct #ortho_vec_into_iter_name #generics
             #where_clause
             {
                 index: usize,
@@ -592,16 +592,27 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
             &where_clause,
         );
 
+        let ortho_mod_name = Ident::new(
+            &("ortho_mod_".to_string() + &name.to_string()),
+            Span::call_site(),
+        );
+
         quote! {
-            #ortho_vec_ts
+            // Make a module so no one can mutate attributes unsafely
+            pub(crate) mod #ortho_mod_name {
+                use super::#struct_name_ident;
 
-            #ortho_struct_ts
-            #ortho_vec_iter_ts
+                #ortho_vec_ts
 
-            #ortho_struct_mut_ts
-            #ortho_vec_iter_mut_ts
+                #ortho_struct_ts
+                #ortho_vec_iter_ts
 
-            #ortho_vec_into_iter_ts
+                #ortho_struct_mut_ts
+                #ortho_vec_iter_mut_ts
+
+                #ortho_vec_into_iter_ts
+            }
+            use #ortho_mod_name::*;
         }
     } else {
         quote!()
