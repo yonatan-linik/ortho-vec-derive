@@ -113,6 +113,40 @@ fn build_ortho_struct(
     )
 }
 
+fn build_ortho_struct_mut(
+    name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+    ortho_lifetime: &Lifetime,
+) -> (Ident, proc_macro2::TokenStream) {
+    let ortho_struct_mut_name = Ident::new(
+        &("OrthoMut".to_string() + &name.to_string()),
+        Span::call_site(),
+    );
+
+    let props_ts_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_ty = &named_field.ty;
+
+        quote! {
+          #field_ident: &#ortho_lifetime mut #field_ty,
+        }
+    });
+
+    let ortho_generics = add_lifetime_to_generics(generics, ortho_lifetime);
+
+    (
+        ortho_struct_mut_name.clone(),
+        quote!(
+        struct #ortho_struct_mut_name #ortho_generics
+        #where_clause
+        {
+            #props_ts_iter
+        }),
+    )
+}
+
 fn build_ortho_vec_struct(
     name: &Ident,
     data_struct: &DataStruct,
@@ -258,7 +292,7 @@ fn build_ortho_vec_iter_struct(
             struct #ortho_vec_iter_name #ortho_generics
             #where_clause
             {
-                v: &'ortho #ortho_vec_name #generics_no_trait_bounds,
+                v: & #ortho_lifetime #ortho_vec_name #generics_no_trait_bounds,
                 index: usize,
             }
 
@@ -294,9 +328,123 @@ fn build_ortho_vec_iter_struct(
     )
 }
 
+fn build_ortho_vec_iter_mut_struct(
+    name: &Ident,
+    ortho_struct_mut_name: &Ident,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+    ortho_lifetime: &Lifetime,
+) -> (Ident, proc_macro2::TokenStream) {
+    let ortho_vec_iter_mut_name = Ident::new(
+        &("OrthoVecIterMut".to_string() + &name.to_string()),
+        Span::call_site(),
+    );
+
+    let ortho_generics = add_lifetime_to_generics(generics, ortho_lifetime);
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+    let ortho_generics_no_trait_bounds = remove_trait_bounds_from_generics(&ortho_generics);
+
+    let vec_iter_mut_define_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_type = &named_field.ty;
+
+        quote! {
+            #field_ident: &#ortho_lifetime mut [#field_type],
+        }
+    });
+
+    let vec_iter_mut_assign_props_from_self =
+        transform_named_fields_into_ts(data_struct, &|named_field| {
+            let field_ident = named_field.ident.as_ref().unwrap();
+
+            quote! {
+                #field_ident: self.#field_ident.as_mut_slice(),
+            }
+        });
+
+    let mut_entry_props_assign_iter = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+            #field_ident: unsafe { &mut *(#field_ident as *mut _) },
+        }
+    });
+
+    let split_at_first_assignment = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let rest_of_ident = Ident::new(
+            &("rest_of_".to_string() + &field_ident.to_string()),
+            Span::call_site(),
+        );
+
+        quote! {
+            let (#field_ident, #rest_of_ident) = unsafe { self.#field_ident.split_first_mut().unwrap_unchecked() };
+        }
+    });
+
+    let assign_rest_of_to_self = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let rest_of_ident = Ident::new(
+            &("rest_of_".to_string() + &field_ident.to_string()),
+            Span::call_site(),
+        );
+
+        quote! {
+            self.#field_ident = unsafe { &mut *(#rest_of_ident as *mut _) };
+        }
+    });
+
+    let first_ident_name = take_first_named_field_ts(data_struct);
+
+    (
+        ortho_vec_iter_mut_name.clone(),
+        quote!(
+            struct #ortho_vec_iter_mut_name #ortho_generics
+            #where_clause
+            {
+                #vec_iter_mut_define_props
+                index: usize,
+            }
+
+            impl #ortho_generics Iterator for #ortho_vec_iter_mut_name #ortho_generics_no_trait_bounds
+            #where_clause
+            {
+                type Item = #ortho_struct_mut_name #ortho_generics_no_trait_bounds;
+
+                #[inline]
+                fn next(&mut self) -> Option<Self::Item> {
+                    if self.index >= self.#first_ident_name.len() {
+                        None
+                    } else {
+                        self.index += 1;
+                        #split_at_first_assignment
+
+                        #assign_rest_of_to_self
+                        Some(#ortho_struct_mut_name {
+                            #mut_entry_props_assign_iter
+                        })
+                    }
+                }
+            }
+
+            impl #ortho_generics #ortho_vec_name #generics_no_trait_bounds
+            #where_clause
+            {
+                fn iter_mut(&#ortho_lifetime mut self) -> #ortho_vec_iter_mut_name #ortho_generics_no_trait_bounds {
+                    #ortho_vec_iter_mut_name {
+                        #vec_iter_mut_assign_props_from_self
+                        index: 0
+                    }
+                }
+            }
+        ),
+    )
+}
+
 fn build_ortho_vec_into_iter_struct(
     name: &Ident,
-    ortho_struct_name: &Ident,
     ortho_vec_name: &Ident,
     data_struct: &DataStruct,
     generics: &Generics,
@@ -397,6 +545,9 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
 
         let ortho_lifetime = Lifetime::new("'ortho", Span::call_site());
 
+        let (ortho_vec_name, ortho_vec_ts) =
+            build_ortho_vec_struct(name, &data_struct, &generics, &where_clause);
+
         let (ortho_struct_name, ortho_struct_ts) = build_ortho_struct(
             name,
             &data_struct,
@@ -404,9 +555,6 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
             &where_clause,
             &ortho_lifetime,
         );
-
-        let (ortho_vec_name, ortho_vec_ts) =
-            build_ortho_vec_struct(name, &data_struct, &generics, &where_clause);
 
         let (_, ortho_vec_iter_ts) = build_ortho_vec_iter_struct(
             name,
@@ -418,9 +566,26 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
             &ortho_lifetime,
         );
 
+        let (ortho_struct_mut_name, ortho_struct_mut_ts) = build_ortho_struct_mut(
+            name,
+            &data_struct,
+            &generics,
+            &where_clause,
+            &ortho_lifetime,
+        );
+
+        let (_, ortho_vec_iter_mut_ts) = build_ortho_vec_iter_mut_struct(
+            name,
+            &ortho_struct_mut_name,
+            &ortho_vec_name,
+            &data_struct,
+            &generics,
+            &where_clause,
+            &ortho_lifetime,
+        );
+
         let (_, ortho_vec_into_iter_ts) = build_ortho_vec_into_iter_struct(
             name,
-            &ortho_struct_name,
             &ortho_vec_name,
             &data_struct,
             &generics,
@@ -428,11 +593,13 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
         );
 
         quote! {
-            #ortho_struct_ts
-
             #ortho_vec_ts
 
+            #ortho_struct_ts
             #ortho_vec_iter_ts
+
+            #ortho_struct_mut_ts
+            #ortho_vec_iter_mut_ts
 
             #ortho_vec_into_iter_ts
         }
