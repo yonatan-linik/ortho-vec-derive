@@ -8,7 +8,7 @@ use syn::{
     WhereClause,
 };
 
-/// Returns [proc_macro2::TokenStream] (not [proc_macro::TokenStream]).
+/// Returns [`proc_macro2::TokenStream`] (not [`proc_macro::TokenStream`]).
 fn transform_named_fields_into_ts(
     data_struct: &DataStruct,
     transform_named_field_fn: &dyn Fn(&syn::Field) -> proc_macro2::TokenStream,
@@ -30,7 +30,7 @@ fn transform_named_fields_into_ts(
     }
 }
 
-/// Returns [proc_macro2::TokenStream] (not [proc_macro::TokenStream]).
+/// Returns [`proc_macro2::TokenStream`] (not [`proc_macro::TokenStream`]).
 fn take_first_named_field_ts(data_struct: &DataStruct) -> proc_macro2::TokenStream {
     match data_struct.fields {
         Named(ref fields) => {
@@ -282,6 +282,7 @@ fn build_ortho_vec_iter_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
+            // SAFETY: We do a bounds check one time on the first vector
             #field_ident: unsafe { self.v.#field_ident.get_unchecked(self.index - 1) },
         }
     });
@@ -368,6 +369,7 @@ fn build_ortho_vec_iter_mut_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
+            // SAFETY: The borrow will live long enough because the originial slice lives for 'ortho
             #field_ident: unsafe { &mut *(#field_ident as *mut _) },
         }
     });
@@ -380,6 +382,7 @@ fn build_ortho_vec_iter_mut_struct(
         );
 
         quote! {
+            // SAFETY: We do a bounds check one time on the first slice
             let (#field_ident, #rest_of_ident) = unsafe { self.#field_ident.split_first_mut().unwrap_unchecked() };
         }
     });
@@ -392,6 +395,7 @@ fn build_ortho_vec_iter_mut_struct(
         );
 
         quote! {
+            // SAFETY: The slice will live long enough because the originial slice lives for 'ortho
             self.#field_ident = unsafe { &mut *(#rest_of_ident as *mut _) };
         }
     });
