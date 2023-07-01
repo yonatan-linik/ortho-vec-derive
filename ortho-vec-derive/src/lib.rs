@@ -32,7 +32,9 @@ mod tests {
 
     #[derive(OrthoVec)]
     struct WeirdStruct<'a, T: Send>
-    where T: std::fmt::Debug {
+    where
+        T: std::fmt::Debug,
+    {
         a: i32,
         b: &'a f32,
         c: T,
@@ -40,12 +42,45 @@ mod tests {
 
     #[test]
     fn test_use_weird_struct() {
-        let v_ws = vec![WeirdStruct {a: 3, b: &4.2, c: "wow"}, WeirdStruct {a: 6, b: &24.2, c: "hello"}].into_ortho();
-        for x in v_ws {
+        let mut v_ws = vec![
+            WeirdStruct {
+                a: 3,
+                b: &4.2,
+                c: "wow",
+            },
+            WeirdStruct {
+                a: 6,
+                b: &24.2,
+                c: "hello",
+            },
+        ]
+        .into_ortho();
+        assert_eq!(v_ws.len(), 2);
+
+        let last_element = v_ws.pop().expect("There must be a last element");
+        assert_eq!(v_ws.len(), 1);
+
+        assert_eq!(last_element.a, 6);
+        assert!((*last_element.b - 24.2).abs() < f32::EPSILON);
+        assert_eq!(last_element.c, "hello");
+
+        v_ws.push(WeirdStruct {
+            a: 7,
+            b: &8.123,
+            c: "push",
+        });
+        assert_eq!(v_ws.len(), 2);
+
+        v_ws.reverse();
+
+        for x in v_ws.iter() {
             println!("a is {:?}", x.a);
             println!("b is {:?}", x.b);
             println!("c is {:?}", x.c);
         }
-    }
 
+        assert_eq!(v_ws.len(), 2);
+        v_ws.clear();
+        assert_eq!(v_ws.len(), 0);
+    }
 }
