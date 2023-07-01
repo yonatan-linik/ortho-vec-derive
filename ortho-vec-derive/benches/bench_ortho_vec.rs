@@ -20,13 +20,13 @@ struct Point10D {
 pub fn regular_vec_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("summation");
 
-    for size in [1e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7] {
+    for size in [100_usize, 1_000, 10_000, 100_000, 1_000_000, 10_000_000] {
         let mut rng = rand::thread_rng();
 
         group.bench_function(BenchmarkId::new("vec", size), |b| {
             b.iter_batched_ref(
                 || {
-                    (0..size as usize)
+                    (0..size)
                         .map(|_| Point10D {
                             a: rng.gen(),
                             b: rng.gen(),
@@ -42,12 +42,12 @@ pub fn regular_vec_benchmark(c: &mut Criterion) {
                         .collect::<Vec<_>>()
                 },
                 |v| {
-                    v.iter_mut().for_each(|x| x.a += 3.0 * x.b + x.a);
+                    v.iter_mut().for_each(|x| x.a = 3.0 * x.b + 2.0 * x.a);
                     let sum = v.iter().map(|x| x.a + x.b).sum::<f64>();
                     let _sum2 = black_box(sum + 7.0);
                 },
                 criterion::BatchSize::LargeInput,
-            )
+            );
         });
     }
 }
@@ -69,13 +69,13 @@ struct OPoint10D {
 pub fn ortho_vec_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("summation");
 
-    for size in [1e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7] {
+    for size in [100_usize, 1_000, 10_000, 100_000, 1_000_000, 10_000_000] {
         let mut rng = rand::thread_rng();
 
         group.bench_function(BenchmarkId::new("ortho_vec", size), |b| {
             b.iter_batched_ref(
                 || {
-                    (0..size as usize)
+                    (0..size)
                         .map(|_| OPoint10D {
                             a: rng.gen(),
                             b: rng.gen(),
@@ -92,12 +92,12 @@ pub fn ortho_vec_benchmark(c: &mut Criterion) {
                         .into_ortho()
                 },
                 |v| {
-                    v.iter_mut().for_each(|x| *x.a += 3.0 * *x.b + *x.a);
+                    v.iter_mut().for_each(|x| *x.a = 3.0 * *x.b + 2.0 * *x.a);
                     let sum = v.iter().map(|x| x.a + x.b).sum::<f64>();
                     let _sum2 = black_box(sum + 7.0);
                 },
                 criterion::BatchSize::LargeInput,
-            )
+            );
         });
     }
 }
