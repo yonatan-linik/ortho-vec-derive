@@ -23,4 +23,6 @@ jobs:
     - name: Run tests without MIRI
       run: cargo test --verbose
     - name: Run tests with MIRI
-      run: rustup toolchain install nightly && cargo +nightly miri test --verbose
+      run: rustup toolchain install nightly && \
+           rustup component add miri --toolchain nightly-x86_64-unknown-linux-gnu && \
+           cargo +nightly miri test --verbose
