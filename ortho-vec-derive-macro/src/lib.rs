@@ -260,6 +260,148 @@ fn build_ortho_vec_struct(
     )
 }
 
+fn impl_vec_method_mut_self_move_struct(
+    struct_name: &Ident,
+    method_name: &str,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let method_name = Ident::new(method_name, Span::call_site());
+
+    let call_method_on_props_pass_value =
+        transform_named_fields_into_ts(data_struct, &|named_field| {
+            let field_ident = named_field.ident.as_ref().unwrap();
+
+            quote! {
+                self.#field_ident.#method_name(value.#field_ident);
+            }
+        });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn #method_name(&mut self, value: #struct_name #generics_no_trait_bounds) {
+                #call_method_on_props_pass_value
+            }
+        }
+    }
+}
+
+fn impl_vec_method_mut_self_ret_opt_struct(
+    struct_name: &Ident,
+    method_name: &str,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let method_name = Ident::new(method_name, Span::call_site());
+
+    let call_method_on_props_assign_member =
+        transform_named_fields_into_ts(data_struct, &|named_field| {
+            let field_ident = named_field.ident.as_ref().unwrap();
+
+            quote! {
+                #field_ident: self.#field_ident.#method_name()?,
+            }
+        });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn #method_name(&mut self) -> Option<#struct_name #generics_no_trait_bounds> {
+                Some(#struct_name {
+                    #call_method_on_props_assign_member
+                })
+            }
+        }
+    }
+}
+
+fn impl_vec_method_mut_self(
+    method_name: &str,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let method_name = Ident::new(method_name, Span::call_site());
+
+    let call_method_on_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+            self.#field_ident.#method_name();
+        }
+    });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn #method_name(&mut self) {
+                #call_method_on_props
+            }
+        }
+    }
+}
+
+fn build_ortho_vec_impl_vec_methods(
+    struct_name: &Ident,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let mut_self_move_struct_methods = ["push"].iter().map(|method_name| {
+        impl_vec_method_mut_self_move_struct(
+            struct_name,
+            method_name,
+            ortho_vec_name,
+            data_struct,
+            generics,
+            where_clause,
+        )
+    });
+
+    let mut_self_ret_opt_struct_methods = ["pop"].iter().map(|method_name| {
+        impl_vec_method_mut_self_ret_opt_struct(
+            struct_name,
+            method_name,
+            ortho_vec_name,
+            data_struct,
+            generics,
+            where_clause,
+        )
+    });
+
+    // dedup() and sort()/sort_unstable() won't simply work as we need to compare the elements
+    let mut_self_methods = ["clear", "shrink_to_fit", "reverse"]
+        .iter()
+        .map(|method_name| {
+            impl_vec_method_mut_self(
+                method_name,
+                ortho_vec_name,
+                data_struct,
+                generics,
+                where_clause,
+            )
+        });
+
+    quote! {
+        #(#mut_self_move_struct_methods)*
+        #(#mut_self_ret_opt_struct_methods)*
+        #(#mut_self_methods)*
+    }
+}
+
 fn build_ortho_vec_iter_struct(
     name: &Ident,
     ortho_struct_name: &Ident,
@@ -553,6 +695,14 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
         let (ortho_vec_name, ortho_vec_ts) =
             build_ortho_vec_struct(name, &data_struct, &generics, &where_clause);
 
+        let ortho_vec_methods_ts = build_ortho_vec_impl_vec_methods(
+            name,
+            &ortho_vec_name,
+            &data_struct,
+            &generics,
+            &where_clause,
+        );
+
         let (ortho_struct_name, ortho_struct_ts) = build_ortho_struct(
             name,
             &data_struct,
@@ -608,6 +758,7 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
                 use super::#struct_name_ident;
 
                 #ortho_vec_ts
+                #ortho_vec_methods_ts
 
                 #ortho_struct_ts
                 #ortho_vec_iter_ts
