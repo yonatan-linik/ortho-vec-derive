@@ -20,5 +20,7 @@ jobs:
       run: cargo clippy --tests --benches --verbose -- --no-deps -D warnings -W clippy::pedantic -W clippy::all -W clippy::undocumented_unsafe_blocks
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
+    - name: Run tests without MIRI
       run: cargo test --verbose
+    - name: Run tests with MIRI
+      run: cargo +nightly miri test --verbose
