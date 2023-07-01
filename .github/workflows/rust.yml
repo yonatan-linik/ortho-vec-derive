@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -20,9 +20,22 @@ jobs:
       run: cargo clippy --tests --benches --verbose -- --no-deps -D warnings -W clippy::pedantic -W clippy::all -W clippy::undocumented_unsafe_blocks
     - name: Build
       run: cargo build --verbose
-    - name: Run tests without MIRI
+    - name: Run tests
       run: cargo test --verbose
-    - name: Run tests with MIRI
-      run: rustup toolchain install nightly && \
-           rustup component add miri --toolchain nightly-x86_64-unknown-linux-gnu && \
-           cargo +nightly miri test --verbose
+
+  test_miri:
+      name: Test (Miri)
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions-rs/toolchain@v1
+          with:
+            profile: minimal
+            toolchain: nightly
+            override: true
+            components: miri
+        - uses: actions-rs/cargo@v1
+          with:
+            command: miri
+            args: test
