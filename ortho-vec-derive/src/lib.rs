@@ -11,7 +11,6 @@
 
 pub mod prelude;
 
-pub use ortho_vec_derive_impl::*;
 pub use ortho_vec_derive_macro::*;
 
 #[cfg(doctest)]
