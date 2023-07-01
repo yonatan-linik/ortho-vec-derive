@@ -466,7 +466,7 @@ fn build_ortho_vec_into_iter_struct(
         let field_ty = named_field.ty.clone();
 
         quote! {
-          #field_ident: <Vec<#field_ty> as IntoIterator>::IntoIter,
+            #field_ident: <Vec<#field_ty> as IntoIterator>::IntoIter,
         }
     });
 
@@ -474,7 +474,8 @@ fn build_ortho_vec_into_iter_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-          #field_ident: self.#field_ident.next().expect("Next field must exist"),
+            // SAFETY: We do a bounds check
+            #field_ident: unsafe { self.#field_ident.next().unwrap_unchecked() },
         }
     });
 
@@ -482,7 +483,7 @@ fn build_ortho_vec_into_iter_struct(
         let field_ident = named_field.ident.as_ref().unwrap();
 
         quote! {
-          #field_ident: self.#field_ident.into_iter(),
+            #field_ident: self.#field_ident.into_iter(),
         }
     });
 

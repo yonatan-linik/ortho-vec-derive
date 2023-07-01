@@ -16,6 +16,6 @@ proc-macro = true
 [dependencies]
 syn = {version="2.0.14", features = ["extra-traits"]}
 quote = "1.0"
-proc-macro2 = "1.0.56"
+proc-macro2 = "1.0"
 
 ortho-vec-derive-impl = { version = "0.1.0", path = "../ortho-vec-derive-impl" }
