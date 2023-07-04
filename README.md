@@ -2,10 +2,10 @@
 
 A derive macro to create orthogonal vectors based on your structs, to allow for better CPU cache usage.
 
-[![Crates.io](should be added soon)]()
+[![Crates.io](https://img.shields.io/crates/v/ortho_vec_derive)](https://crates.io/crates/ortho_vec_derive)
 [![Last commit](https://img.shields.io/github/last-commit/yonatan-linik/ortho-vec-derive)](https://github.com/yonatan-linik/ortho-vec-derive/commits/main)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yonatan-linik/ortho-vec-derive/rust.yml?branch=main)](https://github.com/yonatan-linik/ortho-vec-derive/actions)
-![License: MIT]()
+![License: MIT](https://img.shields.io/crates/l/ortho_vec_derive)
 
 ## Motivation
 
