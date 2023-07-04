@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 #![warn(
     clippy::all,
     clippy::missing_const_for_fn,
@@ -22,7 +22,7 @@ mod test_readme {
         };
     }
 
-    external_doc_test!(include_str!("../../README.md"));
+    external_doc_test!(include_str!("../README.md"));
 }
 
 #[cfg(test)]
