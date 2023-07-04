@@ -1,4 +1,4 @@
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../../README.md")]
 #![warn(
     clippy::all,
     clippy::missing_const_for_fn,
@@ -11,7 +11,6 @@
 
 pub mod prelude;
 
-pub use ortho_vec_derive_impl::*;
 pub use ortho_vec_derive_macro::*;
 
 #[cfg(doctest)]

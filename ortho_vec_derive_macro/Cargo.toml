@@ -1,6 +1,6 @@
 [package]
-name = "ortho-vec-derive-macro"
-description = "Macro definitions for `ortho-vec-derive`"
+name = "ortho_vec_derive_macro"
+description = "Macro definitions for `ortho_vec_derive`"
 version = "0.1.0"
 edition = "2021"
 authors = ["Yonatan Linik <yonatanlinik@gmail.com>"]
@@ -18,4 +18,4 @@ syn = {version="2.0.14", features = ["extra-traits"]}
 quote = "1.0"
 proc-macro2 = "1.0"
 
-ortho-vec-derive-impl = { version = "0.1.0", path = "../ortho-vec-derive-impl" }
+ortho_vec_derive_impl = { version = "0.1.0", path = "../ortho_vec_derive_impl" }

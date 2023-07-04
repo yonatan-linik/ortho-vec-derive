@@ -1,6 +1,6 @@
 [package]
-name = "ortho-vec-derive"
-description = "Derive orthogonal vector structure for better performance"
+name = "ortho_vec_derive"
+description = "Derive orthogonal vector structure for better CPU cache usage"
 version = "0.1.0"
 edition = "2021"
 authors = ["Yonatan Linik <yonatanlinik@gmail.com>"]
@@ -14,8 +14,8 @@ categories = ["performance"]
 default = []
 
 [dependencies]
-ortho-vec-derive-impl = { version = "0.1.0", path = "../ortho-vec-derive-impl" }
-ortho-vec-derive-macro = { version = "0.1.0", path = "../ortho-vec-derive-macro" }
+ortho_vec_derive_impl = { version = "0.1.0", path = "../ortho_vec_derive_impl" }
+ortho_vec_derive_macro = { version = "0.1.0", path = "../ortho_vec_derive_macro" }
 
 [dev-dependencies]
 criterion = {version = "0.4", features = ["html_reports"]}
