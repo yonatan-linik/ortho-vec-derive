@@ -1,6 +1,6 @@
 [package]
 name = "ortho_vec_derive_impl"
-description = "Derive orthogonal vector structure for better performance"
+description = "Derive orthogonal vector structure for better CPU cache usage"
 version = "0.1.0"
 edition = "2021"
 authors = ["Yonatan Linik <yonatanlinik@gmail.com>"]
