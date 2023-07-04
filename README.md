@@ -18,13 +18,13 @@ For example let's imagine we have the following `struct`:
 struct LargeStruct {
     speed: f32,
     location: f32,
-    more_data: [u64; 10];
+    more_data: [u64; 10],
 }
 ```
 
 A `Vec<LargeStruct>` will look like this in memory:
 
-```
+```txt
    4B        4B         80B       4B        4B         80B 
 [[speed] [location] [more_data] [speed] [location] [more_data]]
  ^                              ^
@@ -35,6 +35,14 @@ A `Vec<LargeStruct>` will look like this in memory:
 Now we want to loop over the object in this `Vec` and update the location based on the speed:
 
 ```rust
+struct LargeStruct {
+    speed: f32,
+    location: f32,
+    more_data: [u64; 10],
+}
+
+let mut large_structs = vec![LargeStruct {speed: -1.2, location: 7.3, more_data: [0; 10]}];
+
 for large_struct in large_structs.iter_mut() {
     large_struct.location += large_struct.speed;
 }
@@ -92,32 +100,34 @@ where
     c: T,
 }
 
-let mut ortho_vec = vec![
-    WeirdStruct {
-        a: 3,
-        b: &4.2,
-        c: "nice",
-    },
-    WeirdStruct {
-        a: 6,
-        b: &24.2,
-        c: "hello",
-    },
-]
-.into_ortho();
+fn main () {
+    let mut ortho_vec = vec![
+        WeirdStruct {
+            a: 3,
+            b: &4.2,
+            c: "nice",
+        },
+        WeirdStruct {
+            a: 6,
+            b: &24.2,
+            c: "hello",
+        },
+    ]
+    .into_ortho();
 
-ortho_vec.push(WeirdStruct {
-    a: 7,
-    b: &8.123,
-    c: "push",
-});
+    ortho_vec.push(WeirdStruct {
+        a: 7,
+        b: &8.123,
+        c: "push",
+    });
 
-for ws in ortho_vec.iter_mut() {
-    *ws.a += 3;
-}
+    for ws in ortho_vec.iter_mut() {
+        *ws.a += 3;
+    }
 
-for ws in ortho_vec.iter() {
-    println!("b = {:?}", ws.b);
+    for ws in ortho_vec.iter() {
+        println!("b = {:?}", ws.b);
+    }
 }
 ```
 
@@ -126,3 +136,7 @@ for ws in ortho_vec.iter() {
 Results may vary between use-cases and platforms.&nbsp;
 Running a small benchmark (which is in the crate's repo) we can see a maximum of around 6X speedup, this is at 1M/10M but at sizes like 10K/100K we can also see speedup of around 2-3X.&nbsp;
 It is recommended that you just try to bench the 2 versions of the code against each other, this way you can be sure this is working in your case.
+
+## Notes
+
+The macro can't be used on a struct defined inside a function for now.

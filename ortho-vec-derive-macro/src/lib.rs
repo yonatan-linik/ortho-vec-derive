@@ -229,7 +229,7 @@ fn build_ortho_vec_struct(
     );
 
     let vec_into_ortho_impl = quote!(
-        pub trait #into_ortho_name {
+        pub(super) trait #into_ortho_name {
             type OrthoVec;
 
             fn into_ortho(self) -> Self::OrthoVec;
