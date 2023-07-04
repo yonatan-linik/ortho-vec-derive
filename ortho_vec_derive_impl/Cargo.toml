@@ -1,5 +1,5 @@
 [package]
-name = "ortho-vec-derive-impl"
+name = "ortho_vec_derive_impl"
 description = "Derive orthogonal vector structure for better performance"
 version = "0.1.0"
 edition = "2021"
