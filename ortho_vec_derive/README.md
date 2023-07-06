@@ -1,4 +1,4 @@
-# `ortho-vec-derive`
+# `ortho_vec_derive`
 
 A derive macro to create orthogonal vectors based on your structs, to allow for better CPU cache usage.
 
