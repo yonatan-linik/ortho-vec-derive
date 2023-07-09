@@ -1,4 +1,4 @@
-# `ortho-vec-derive`
+# `ortho_vec_derive`
 
 A derive macro to create orthogonal vectors based on your structs, to allow for better CPU cache usage.
 
@@ -51,13 +51,18 @@ for large_struct in large_structs.iter_mut() {
 The CPU will read the location in memory for `.speed` and `.location` but it will also cache the next bytes in memory.&nbsp;
 How many bytes are cached can change based on your specific CPU.&nbsp;
 What this means is, that we will read a lot of non required memory (`.more_data`) into cache.&nbsp;
-In turn, the read of `.speed` for the next object we will have to go directly into RAM again, which is 10-100 times slower than cache.
+In turn, the read of `.speed` for the next object, will have to go directly into RAM again, which is 10-100 times slower than cache.
 
 To prevent these cache misses from happening and slowing down the program it is common to use a `Vec` per field in the struct, this happens such that the same index in all `Vec`-s represents the same object.
 
 Writing the code for and managing a few `Vec`-s this way can be a bit complicated and require a lot of boilerplate code.
 
 The `OrthoVec` derive macro tries to solve these issues.
+
+### Further information
+
++ [Android developers blog](https://android-developers.googleblog.com/2015/07/game-performance-data-oriented.html)
++ [Mike Acton's Lecture](https://youtube.com/watch?v=rX0ItVEVjHc)
 
 ## Supported API
 
