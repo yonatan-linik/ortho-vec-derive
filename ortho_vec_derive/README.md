@@ -73,6 +73,8 @@ The `OrthoVec` derive macro tries to solve these issues.
 ### ortho-`Vec`
 
 All of these are the same as the `Vec` methods
++ `new()`
++ `with_capacity()`
 + `iter()`
 + `iter_mut()`
 + `into_iter()`
@@ -82,6 +84,9 @@ All of these are the same as the `Vec` methods
 + `clear()`
 + `reverse()`
 + `shrink_to_fit()`
++ `insert()`
++ `remove()`
++ `swap_remove()`
 
 The only caveat is that, when iterating with `iter_mut()`, you get a `struct` that contains a `&mut` to each inner `Vec`.&nbsp;
 To use it you have to dereference it by adding a `*` prefix.
@@ -140,7 +145,8 @@ fn main () {
 
 Results may vary between use-cases and platforms.&nbsp;
 Running a small benchmark (which is in the crate's repo) we can see a maximum of around 6X speedup, this is at 1M/10M but at sizes like 10K/100K we can also see speedup of around 2-3X.&nbsp;
-It is recommended that you just try to bench the 2 versions of the code against each other, this way you can be sure this is working in your case.
+It is recommended that you just try to bench the 2 versions of the code against each other, this way you can be sure this is working in your case.&nbsp;
+It is expected to work best when most use-cases involve iterating over elements and using a few of their fields at a time.
 
 ## Notes
 

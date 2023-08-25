@@ -353,6 +353,123 @@ fn impl_vec_method_mut_self(
     }
 }
 
+fn impl_vec_insert(
+    struct_name: &Ident,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let call_insert_on_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+            self.#field_ident.insert(index, element.#field_ident);
+        }
+    });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn insert(&mut self, index: usize, element: #struct_name #generics_no_trait_bounds) {
+                #call_insert_on_props
+            }
+        }
+    }
+}
+
+fn impl_vec_method_mut_self_index_ret_struct(
+    struct_name: &Ident,
+    method_name: &str,
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let method_name = Ident::new(method_name, Span::call_site());
+
+    let call_method_on_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+
+        quote! {
+            #field_ident: self.#field_ident.#method_name(index),
+        }
+    });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn #method_name(&mut self, index: usize) -> #struct_name #generics_no_trait_bounds {
+                #struct_name {
+                    #call_method_on_props
+                }
+            }
+        }
+    }
+}
+
+fn impl_vec_new(
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let call_new_on_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_ty = &named_field.ty;
+
+        quote! {
+            #field_ident: Vec::<#field_ty>::new(),
+        }
+    });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn new() -> #ortho_vec_name #generics_no_trait_bounds {
+                #ortho_vec_name {
+                    #call_new_on_props
+                }
+            }
+        }
+    }
+}
+
+fn impl_vec_with_capacity(
+    ortho_vec_name: &Ident,
+    data_struct: &DataStruct,
+    generics: &Generics,
+    where_clause: &Option<WhereClause>,
+) -> proc_macro2::TokenStream {
+    let call_with_capacity_on_props = transform_named_fields_into_ts(data_struct, &|named_field| {
+        let field_ident = named_field.ident.as_ref().unwrap();
+        let field_ty = &named_field.ty;
+
+        quote! {
+            #field_ident: Vec::<#field_ty>::with_capacity(capacity),
+        }
+    });
+
+    let generics_no_trait_bounds = remove_trait_bounds_from_generics(generics);
+
+    quote! {
+        impl #generics #ortho_vec_name #generics_no_trait_bounds
+        #where_clause {
+            pub(super) fn with_capacity(capacity: usize) -> #ortho_vec_name #generics_no_trait_bounds {
+                #ortho_vec_name {
+                    #call_with_capacity_on_props
+                }
+            }
+        }
+    }
+}
+
 fn build_ortho_vec_impl_vec_methods(
     struct_name: &Ident,
     ortho_vec_name: &Ident,
@@ -395,10 +512,37 @@ fn build_ortho_vec_impl_vec_methods(
             )
         });
 
+    let insert = impl_vec_insert(
+        struct_name,
+        ortho_vec_name,
+        data_struct,
+        generics,
+        where_clause,
+    );
+
+    let mut_self_index_ret_struct_methods = ["remove", "swap_remove"].iter().map(|method_name| {
+        impl_vec_method_mut_self_index_ret_struct(
+            struct_name,
+            method_name,
+            ortho_vec_name,
+            data_struct,
+            generics,
+            where_clause,
+        )
+    });
+
+    let new = impl_vec_new(ortho_vec_name, data_struct, generics, where_clause);
+
+    let with_capacity = impl_vec_with_capacity(ortho_vec_name, data_struct, generics, where_clause);
+
     quote! {
         #(#mut_self_move_struct_methods)*
         #(#mut_self_ret_opt_struct_methods)*
         #(#mut_self_methods)*
+        #insert
+        #(#mut_self_index_ret_struct_methods)*
+        #new
+        #with_capacity
     }
 }
 
@@ -753,7 +897,7 @@ pub fn ortho_vec(input: TokenStream) -> TokenStream {
         );
 
         quote! {
-            // Make a module so no one can mutate attributes unsafely
+            // Wrap with a module so no one can mutate attributes unsafely
             pub(crate) mod #ortho_mod_name {
                 use super::#struct_name_ident;
 
